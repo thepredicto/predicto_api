@@ -1,3 +1,6 @@
 # predicto_api
-Contains python library for predicto api
+Python library for predicto api
+
 [https://predic.to](https://predic.to)
+
+--placeholder--
