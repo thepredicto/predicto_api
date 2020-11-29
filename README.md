@@ -3,4 +3,4 @@ Python library for predicto api
 
 [https://predic.to](https://predic.to)
 
---placeholder--
+For usage, check the notebooks section.
