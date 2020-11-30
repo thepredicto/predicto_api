@@ -1,6 +1,12 @@
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
+import enum
+
+class TradeAction(enum.IntEnum):
+    Noaction = 0
+    Buy = 1
+    Sell = 2
 
 class PredictoApiWrapper(object):
     """Api wrapper class for Predicto (https://predic.to)"""
