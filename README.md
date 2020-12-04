@@ -44,7 +44,7 @@ trade_pick_json = predicto_api_wrapper.get_trade_pick(ticker, date)
 Make sure you understand the risks if you are using real money!
 We recommend that you start by experimenting with an Alpaca Paper acccount.
 
-```
+```python
 from predicto_api_wrapper import PredictoApiWrapper, TradeAction
 from alpaca_api_wrapper import AlpacaApiWrapper
 
