@@ -2,6 +2,8 @@ import enum
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
+from datetime import datetime, timedelta
+import time
 
 class TradeAction(enum.IntEnum):
     Noaction = 0
@@ -15,6 +17,15 @@ class PredictoApiWrapper(object):
 
     def __init__(self, apiSessionId):
         self._head = {'Cookie': 'session={0}'.format(apiSessionId)}
+        self._alpaca_api_wrapper = None
+
+    def set_alpaca_api_wrapper(self, alpaca_api_wrapper):
+        """Sets the alpaca api wrapper object. It will be used to submit orders to Alpaca.
+        
+        Args:
+            alpaca_api_wrapper: The AlpacaApiWrapper object to use
+        """
+        self._alpaca_api_wrapper = alpaca_api_wrapper
 
     def get_supported_tickers(self):
         """Returns a list of supported tickers
@@ -120,3 +131,105 @@ class PredictoApiWrapper(object):
             print()
         
         return (forecast_json, trade_pick_json)
+
+    def submit_latest_trade_picks(      self, 
+                                        abs_change_pct_threshold = 0.02,
+                                        actions = [int(TradeAction.Buy), int(TradeAction.Sell)],
+                                        average_uncertainty = 0.15,
+                                        model_avg_roi = 0.0,
+                                        symbols = None,
+                                        investmentAmountPerTrade = 1000):
+        """Call this daily just before market open (or during). It will use last day's Trade Picks.
+        
+        Args:
+            abs_change_pct_threshold : the absolute percentage expected change threshold, default is 0.02 (2%)
+            actions                  : array with actions filter, default is [int(TradeAction.Buy), int(TradeAction.Sell)]
+            average_uncertainty      : threshold for average uncertainty of forecast - the higher the riskier, default 0.15 (15%)
+            model_avg_roi            : threshold for the historical average ROI for all the Trade Picks from the stock's model, default 0.0 (non negative ROI)
+            symbols                  : array with symbols to trade, if None all of them will be considered
+            investmentAmountPerTrade : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
+        
+        Returns:
+            The forecast json and trade pick json as (forecast_json, trade_pick_json)
+        """
+        # retrieve all supported stocks
+        stocks_json = self.get_supported_tickers()
+        stocks_df = pd.DataFrame(stocks_json)
+        # Filter based on given symbols list
+        if (symbols is not None):
+            stocks_df = stocks_df[stocks_df.RelatedSymbol.isin(symbols)]
+
+        # get Trade Picks that were generated yesterday
+        generated_date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        print('Processing Predicto Trade Picks from {0}'.format(generated_date))
+        print('- More details http://predic.to/exploreroi?minroi=0&sdate={0}'.format(generated_date))
+        print()
+        print('Using filters')
+        print('\t abs_change_pct_threshold : {0:.2f}'.format(abs_change_pct_threshold))
+        print('\t average_uncertainty      : {0:.2f}'.format(average_uncertainty))
+        print('\t model_avg_roi            : {0:.2f}'.format(model_avg_roi))
+        print('\t symbols                  : {0}'.format('All' if symbols is None else str(symbols)))
+        print('\t actions                  : {0}'.format(str([TradeAction(x).name for x in actions])))
+        print()
+
+        symbols_submitted = []
+        idx = 0
+        for symbol in stocks_df.RelatedStock:
+            idx += 1
+            print('Processing {0}/{1}, Symbol: {2}'.format(idx, len(stocks_df), symbol))
+
+            try:
+                tp_json = self.get_trade_pick(symbol, generated_date)
+                change_pct = (tp_json['TargetSellPrice'] - tp_json['StartingPrice']) / tp_json['StartingPrice']
+
+                # Check if filters are matched
+                if abs(change_pct) >= abs_change_pct_threshold \
+                        and tp_json['TradeAction'] in actions \
+                        and tp_json['AvgUncertainty'] <= average_uncertainty \
+                        and tp_json['AverageROI'] >= model_avg_roi:
+                        
+                    print('\tMatched Expected change : {0:.2f} !'.format(change_pct))
+                    print('\t        Trade Action    : {0} !'.format(TradeAction(tp_json['TradeAction']).name))
+                    print('\t        Avg Uncertainty : {0:.2f} !'.format(tp_json['AvgUncertainty']))
+                    print('\t        Avg ROI of model: {0:.2f} !'.format(tp_json['AverageROI']))
+
+                    # Create a client order id, for easy tracking
+                    client_order_id = 'Predicto__{0}_{1}_{2}_{3}_bracket'.format(
+                        generated_date,
+                        datetime.today().strftime('%H-%M-%S'),
+                        symbol, 
+                        TradeAction(tp_json['TradeAction']).name)
+
+                    # If all looks good, we can now submit our bracket order (market order + stop loss + take profit)
+                    print()
+                    print('> Alpaca: Submitting bracket order...')
+                    print('------------------------')
+                    bracket_order_result = self._alpaca_api_wrapper.submit_bracket_order(
+                        TradeAction(tp_json['TradeAction']), 
+                        symbol, 
+                        None, 
+                        investmentAmountPerTrade, 
+                        tp_json['StartingPrice'], 
+                        tp_json['TargetSellPrice'], 
+                        tp_json['TargetStopLossPrice'], 
+                        client_order_id)
+                    print('------------------------')
+                    print()
+
+                    if bracket_order_result is not None:
+                        # unpack in case we want to process or store those values
+                        (alpaca_order, newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity) = bracket_order_result
+                        # add it to our 'submitted' list
+                        symbols_submitted.append(symbol)
+
+                else:
+                    print('\tSkipping, didnt match criteria\n')
+                
+                # make sure you sleep a bit to avoid hitting api limit
+                time.sleep(1)
+                    
+            except Exception as ex:
+                print('\t Skipping: Exception: {0}\n'.format(ex))
+
+        print('Submitted {0} hedged orders: {1}'.format(len(symbols_submitted), str(symbols_submitted)))

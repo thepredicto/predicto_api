@@ -35,17 +35,16 @@ class AlpacaApiWrapper(object):
             newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity are re-adjusted based on latest price
         """
 
-        # ONLY allow market orders when market is open for now
-        # - this is needed because we can't hedge (submit an oco order) our market order before it is filled!
-        clock = self.api.get_clock()
-        if not clock.is_open :
-            print('Error: submit_market_order only allowed when market is open!')
-            return None
+        # Re-enable to ONLY allow market orders when market is open 
+        # clock = self.api.get_clock()
+        # if not clock.is_open :
+        #     print('Error: submit_market_order only allowed when market is open!')
+        #     return None
 
         # ONLY allow opening new position if we are not holding one currently
         position = self.get_holding_positions(symbol)
         if position is not None:
-            print('Error: already holding open position')
+            print('Error: already holding open position for {0}'.format(symbol))
             return None
 
         # ONLY allow opening new position if we haven't traded this symbol (bought or sold) in the last 7 hours (same trading day)
@@ -75,6 +74,68 @@ class AlpacaApiWrapper(object):
             print('Success: submit_market_order ID: {0}'.format(order.id))
 
         return (order, newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity)
+
+
+    def submit_bracket_order(self, action, symbol, qty, investmentAmount, startingPrice, targetSellPrice, stopLossPrice, client_order_id):
+        """
+        Call to submit a bracket order position to alpaca
+        
+        Args:
+            action: TradeAction.BUY or TradeAction.SELL (for shorting)
+            symbol: the ticker to order
+            qty: the quantity of shares to order, if quantity is None or 0, entire investment amount will be used
+            investmentAmount: the max investment amount, needs to be able to satisfy given qty
+            startingPrice: the expected entry price (price might have changed)
+            targetSellPrice: the target exit price (used for trade validations)
+            stopLossPrice: the stop loss price (used for trade validations)
+            client_order_id: a client order id for tracking
+        
+        Returns:
+            Result will be in the form of: (order, newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity) or None if some error occured
+            order: is the alpaca order json, will be none if order couldn't go through
+            newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity are re-adjusted based on latest price
+        """
+        # ONLY allow opening new position if we are not holding one currently
+        position = self.get_holding_positions(symbol)
+        if position is not None:
+            print('Error: already holding open position for {0}'.format(symbol))
+            return None
+
+        # ONLY allow opening new position if we haven't traded this symbol (bought or sold) in the last 7 hours (same trading day)
+        sinceDate = str((datetime.utcnow() - timedelta(hours=7)))
+        filledOrders = self.get_filled_orders_for_symbol_since(symbol, sinceDate)
+        if filledOrders is not None and len(filledOrders) > 0:
+            print('Error: bought or sold this symbol in the last 7 hours - This check exists to avoid Day Trading Pattern flag, feel freee to remove.')
+            return None
+
+        # validate prices
+        (goAheadWithTrade, newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity) = self.validate_latest_price_and_stoploss(action, symbol, qty, investmentAmount, startingPrice, targetSellPrice, stopLossPrice)
+        if not goAheadWithTrade:
+            print('Error: validateLatestPriceAndStopLoss failed')
+            return None
+
+        # go ahead and submit order
+        order = self.api.submit_order(
+            side=action.name.lower(),
+            symbol=symbol,
+            type='market',
+            qty=newQuantity,
+            time_in_force='gtc',
+            order_class='bracket',
+            take_profit={ 
+                'limit_price': str(targetSellPrice)
+            },
+            stop_loss={
+                'stop_price': str(stopLossPrice)
+            },
+            client_order_id=client_order_id
+        )
+
+        if order is not None:
+            print('Success: submit_bracket_order ID: {0}'.format(order.id))
+
+        return (order, newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity)
+
 
     def open_oco_position(self, parentOrderId, symbol, targetSellPrice, stopLossPrice, client_order_id):
         """
@@ -114,7 +175,7 @@ class AlpacaApiWrapper(object):
 
         newSide = 'sell' if parentOrder.side == 'buy' else 'buy'
 
-        # Check and adjust actual quantity based on held position quantity (saw that EBAY filled_qty = 31, but actual held was 29)
+        # Check and adjust actual quantity based on held position quantity
         openPosition = self.api.get_position(parentOrder.symbol)
         safeguardQty = parentOrder.filled_qty
         openPositionQty = abs(int(openPosition.qty))
@@ -182,7 +243,7 @@ class AlpacaApiWrapper(object):
         if qty is None:
             qty = math.floor(investmentAmount/latestPrice)
             if qty == 0:
-                print('Wont process: investmentAmount is less than latest stock Price')
+                print('Wont process: investmentAmount is less than latest stock Price (${0})'.format(latestPrice))
                 return (False, latestPrice, None, None, qty)
 
         if (qty * latestPrice) > investmentAmount:
@@ -194,10 +255,10 @@ class AlpacaApiWrapper(object):
 
         # if we already hit our target price, it's too late, cancel order
         if action == TradeAction.Buy and (latestPrice >= targetSellPrice):
-            print('Wont process: action == TradeAction.Buy and (latestPrice >= targetSellPrice)')
+            print('Wont process - Price already moved: action == TradeAction.Buy and (latestPrice >= targetSellPrice)')
             return (False, latestPrice, None, None, newQuantity)
         if action == TradeAction.Sell and (latestPrice <= targetSellPrice):
-            print('Wont process: action == TradeAction.Sell and (latestPrice <= targetSellPrice)')
+            print('Wont process - Price already moved: action == TradeAction.Sell and (latestPrice <= targetSellPrice)')
             return (False, latestPrice, None, None, newQuantity)
         if action == TradeAction.Noaction:
             print('Wont process: action == TradeAction.Noaction')
