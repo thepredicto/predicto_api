@@ -54,7 +54,7 @@ class PredictoApiWrapper(object):
         endpoint = "{0}/api/forecasting/{1}/{2}/-1".format(PredictoApiWrapper._base_url, ticker, date)
         jsn = requests.get(endpoint, headers=self._head).json()
         
-        forecasting_json = jsn[0]['PredictionsJson']
+        forecasting_json = jsn[0]['PredictionsJson'] if len(jsn) > 0 else None
         
         return forecasting_json
     
@@ -71,7 +71,7 @@ class PredictoApiWrapper(object):
         endpoint = "{0}/api/forecasting/tradepicks/{1}/{2}/_,0.0,0".format(PredictoApiWrapper._base_url, ticker, date)
         jsn = requests.get(endpoint, headers=self._head).json()
         
-        trade_pick_json = jsn['Recommendations'][0]
+        trade_pick_json = jsn['Recommendations'][0] if len(jsn['Recommendations']) > 0 else None
         
         return trade_pick_json
             
@@ -107,28 +107,30 @@ class PredictoApiWrapper(object):
         if print_it:
             print('Forecast for {0} on {1}'.format(ticker, date))
 
-            # convert to pandas dataframe and plot forecast
-            forecast_df = pd.read_json(forecast_json, orient='index')
-            forecast_df.Prediction.plot()
-            plt.show()
+            if forecast_json is not None:
+                # convert to pandas dataframe and plot forecast
+                forecast_df = pd.read_json(forecast_json, orient='index')
+                forecast_df.Prediction.plot()
+                plt.show()
 
-            # print forecast info
-            print(forecast_df[['Prediction', 'Uncertainty']])
-            print()
+                # print forecast info
+                print(forecast_df[['Prediction', 'Uncertainty']])
+                print()
 
-            # print trade pick info
-            predicted_change_percent = (trade_pick_json['TargetSellPrice'] - trade_pick_json['StartingPrice']) / trade_pick_json['StartingPrice']
-            print('Trade Pick generated based on forecast for {0} on {1}'.format(ticker, date))
-            print('---------------------------------------')
-            print('Action          : \t{0}'.format(TradeAction(trade_pick_json['TradeAction']).name))
-            print('Entry price     : \t{0}'.format(trade_pick_json['StartingPrice']))
-            print('Target price    : \t{0}'.format(trade_pick_json['TargetSellPrice']))
-            print('StopLoss price  : \t{0}'.format(trade_pick_json['TargetStopLossPrice']))
-            print('Expiration Date : \t{0}'.format(trade_pick_json['ExpirationDate']))
-            print('Predicted change: \t{0:.2f} %'.format(predicted_change_percent * 100))
-            print('---------------------------------------')
-            print()
-            print()
+            if trade_pick_json is not None:
+                # print trade pick info
+                predicted_change_percent = (trade_pick_json['TargetSellPrice'] - trade_pick_json['StartingPrice']) / trade_pick_json['StartingPrice']
+                print('Trade Pick generated based on forecast for {0} on {1}'.format(ticker, date))
+                print('---------------------------------------')
+                print('Action          : \t{0}'.format(TradeAction(trade_pick_json['TradeAction']).name))
+                print('Entry price     : \t{0}'.format(trade_pick_json['StartingPrice']))
+                print('Target price    : \t{0}'.format(trade_pick_json['TargetSellPrice']))
+                print('StopLoss price  : \t{0}'.format(trade_pick_json['TargetStopLossPrice']))
+                print('Expiration Date : \t{0}'.format(trade_pick_json['ExpirationDate']))
+                print('Predicted change: \t{0:.2f} %'.format(predicted_change_percent * 100))
+                print('---------------------------------------')
+                print()
+                print()
         
         return (forecast_json, trade_pick_json)
 
@@ -181,6 +183,12 @@ class PredictoApiWrapper(object):
 
             try:
                 tp_json = self.get_trade_pick(symbol, generated_date)
+
+                # Check if we got info back
+                if tp_json is None:
+                    print('\t        Trade Pick json is None. Not found or not generated yet. Try again later.')
+                    continue
+
                 change_pct = (tp_json['TargetSellPrice'] - tp_json['StartingPrice']) / tp_json['StartingPrice']
 
                 # Check if filters are matched
