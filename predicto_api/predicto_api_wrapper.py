@@ -74,6 +74,23 @@ class PredictoApiWrapper(object):
         trade_pick_json = jsn['Recommendations'][0] if len(jsn['Recommendations']) > 0 else None
         
         return trade_pick_json
+        
+    def get_my_trade_picks(self, date):
+        """Returns a list of trade picks generated on given date that user has selected.
+        As they appear in https://predic.to/exploreroi?my=1
+        
+        Args:
+            date: the date of trade picks (YYYY-MM-DD format)
+        
+        Returns:
+            json array with retrieved trade picks
+        """
+        endpoint = "{0}/api/forecasting/tradepicks/_/{1}/_,0.0,1".format(PredictoApiWrapper._base_url, date)
+        jsn = requests.get(endpoint, headers=self._head).json()
+        
+        my_trade_picks_json = jsn['Recommendations']
+        
+        return my_trade_picks_json
             
     def get_model_recent_performance_graph(self, ticker):
         """Returns recent performance GIF url for selected ticker
@@ -150,9 +167,6 @@ class PredictoApiWrapper(object):
             model_avg_roi            : threshold for the historical average ROI for all the Trade Picks from the stock's model, default 0.0 (non negative ROI)
             symbols                  : array with symbols to trade, if None all of them will be considered
             investmentAmountPerTrade : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
-        
-        Returns:
-            The forecast json and trade pick json as (forecast_json, trade_pick_json)
         """
         # retrieve all supported stocks
         stocks_json = self.get_supported_tickers()
@@ -233,6 +247,76 @@ class PredictoApiWrapper(object):
 
                 else:
                     print('\tSkipping, didnt match criteria\n')
+                
+                # make sure you sleep a bit to avoid hitting api limit
+                time.sleep(1)
+                    
+            except Exception as ex:
+                print('\t Skipping: Exception: {0}\n'.format(ex))
+
+        print('Submitted {0} hedged orders: {1}'.format(len(symbols_submitted), str(symbols_submitted)))
+
+    def submit_my_latest_trade_picks(self, investmentAmountPerTrade):
+        """Call this daily just before market open (or during). It will use last day's Trade Picks that YOU have picked in Predicto website.
+        You can select your Trade Picks in https://predic.to/autotrader
+        You can see your latest Trade picks in https://predic.to/exploreroi?my=1
+
+        Args:
+            investmentAmountPerTrade : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
+        """
+        # get Trade Picks that were picked yesterday
+        generated_date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        print('Processing Predicto "My" Trade Picks from {0}'.format(generated_date))
+        print('- More details https://predic.to/exploreroi?my=1&sdate={0}'.format(generated_date))
+        print()
+
+        # retrieve My Trade Picks
+        tp_json_array = self.get_my_trade_picks(generated_date)
+
+        symbols_submitted = []
+        idx = 0
+        for tp_json in tp_json_array:
+            symbol = tp_json['Symbol']
+            idx += 1
+            print('Processing {0}/{1}, Symbol: {2}'.format(idx, len(tp_json_array), tp_json['Symbol']))
+
+            try:
+                change_pct = (tp_json['TargetSellPrice'] - tp_json['StartingPrice']) / tp_json['StartingPrice']
+
+                print('\t Expected change : {0:.2f} !'.format(change_pct))
+                print('\t Trade Action    : {0} !'.format(TradeAction(tp_json['TradeAction']).name))
+                print('\t Avg Uncertainty : {0:.2f} !'.format(tp_json['AvgUncertainty']))
+                print('\t Avg ROI of model: {0:.2f} !'.format(tp_json['AverageROI']))
+
+                # Create a client order id, for easy tracking
+                client_order_id = 'Predicto__{0}_{1}_{2}_{3}_bracket'.format(
+                    generated_date,
+                    datetime.today().strftime('%H-%M-%S'),
+                    symbol, 
+                    TradeAction(tp_json['TradeAction']).name)
+
+                # If all looks good, we can now submit our bracket order (market order + stop loss + take profit)
+                print()
+                print('> Alpaca: Submitting bracket order...')
+                print('------------------------')
+                bracket_order_result = self._alpaca_api_wrapper.submit_bracket_order(
+                    TradeAction(tp_json['TradeAction']), 
+                    symbol, 
+                    None, 
+                    investmentAmountPerTrade, 
+                    tp_json['StartingPrice'], 
+                    tp_json['TargetSellPrice'], 
+                    tp_json['TargetStopLossPrice'], 
+                    client_order_id)
+                print('------------------------')
+                print()
+
+                if bracket_order_result is not None:
+                    # unpack in case we want to process or store those values
+                    (alpaca_order, newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity) = bracket_order_result
+                    # add it to our 'submitted' list
+                    symbols_submitted.append(symbol)
                 
                 # make sure you sleep a bit to avoid hitting api limit
                 time.sleep(1)
