@@ -25,7 +25,7 @@ predicto_api_wrapper.set_alpaca_api_wrapper(alpaca_wrapper)
 #   investmentAmountPerTrade : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
 
 # Execute Predicto AutoTrader!
-# You can schedule this script to run daily before market open (6.30am E.T.)
+# You can schedule this script to run daily before market open (9.30am E.T.)
 # Note: Make sure you understand the risks if you are using real money!
 predicto_api_wrapper.submit_latest_trade_picks(
                                         abs_change_pct_threshold = 0.02,
