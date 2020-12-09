@@ -196,7 +196,7 @@ class AlpacaApiWrapper(object):
                 'limit_price': str(targetSellPrice)
             },
             stop_loss={
-                'stop_price': str(newStopLossPrice)
+                'stop_price': str(stopLossPrice)
             },
             client_order_id=client_order_id
         )
