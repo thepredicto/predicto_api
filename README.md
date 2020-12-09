@@ -61,11 +61,10 @@ predicto_api_wrapper = PredictoApiWrapper(predicto_api_session_id)
 predicto_api_wrapper.set_alpaca_api_wrapper(alpaca_wrapper)
 
 # Option 1:
-#
-# Execute Predicto AutoTrader
-# You can schedule this script to run daily before market open (6.30am E.T.).
-# It will submit last day's Trade Picks matching your criteria.
-# Note: Make sure you understand the risks if you are using real money!
+#   Execute Predicto AutoTrader
+#   You can schedule this script to run daily before market open (6.30am E.T.).
+#   It will submit last day's Trade Picks matching your criteria.
+#   Note: Make sure you understand the risks if you are using real money!
 predicto_api_wrapper.submit_latest_trade_picks(
                                         abs_change_pct_threshold = 0.02,
                                         actions = [int(TradeAction.Buy), int(TradeAction.Sell)],
@@ -75,12 +74,11 @@ predicto_api_wrapper.submit_latest_trade_picks(
                                         investmentAmountPerTrade=1000)
 
 # Option 2:
-#
-# Execute Predicto AutoTrader using "My Picks" as you picked them in Predicto website!
-# Manually pick them every night at https://predic.to/autotrader
-# You can schedule this script to run daily before market open (6.30am E.T.)
-# It will submit last day's "My Picks"
-# Note: Make sure you understand the risks if you are using real money!
+#   Execute Predicto AutoTrader using "My Picks" as you picked them in Predicto website!
+#   Manually pick them every night at https://predic.to/autotrader
+#   You can schedule this script to run daily before market open (6.30am E.T.)
+#   It will submit last day's "My Picks"
+#   Note: Make sure you understand the risks if you are using real money!
 predicto_api_wrapper.submit_my_latest_trade_picks(
                                         investmentAmountPerTrade=1000)
 ```
