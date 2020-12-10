@@ -89,7 +89,7 @@ Sample AutoTrader using Predicto Forecasts with Alpaca can be found in [autotrad
 
 ## Jupyter Notebook For Predicto API interactions
 
-For detailed usage of PredictoApiWrapper, check the [example_usage.ipynb](Notebooks/example_usage.ipynb) in the `Notebooks` folder.
+For detailed usage of PredictoApiWrapper, check the [predicto_api_example_usage.ipynb](Notebooks/predicto_api_example_usage.ipynb) in the `Notebooks` folder.
 
 ## Jupyter Notebook for AutoTrader using Alpaca API
 
