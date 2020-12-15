@@ -66,12 +66,12 @@ predicto_api_wrapper.set_alpaca_api_wrapper(alpaca_wrapper)
 #   It will submit last day's Trade Picks matching your criteria.
 #   Note: Make sure you understand the risks if you are using real money!
 predicto_api_wrapper.submit_latest_trade_picks(
-                                        abs_change_pct_threshold = 0.02,
-                                        actions = [int(TradeAction.Buy), int(TradeAction.Sell)],
-                                        average_uncertainty = 0.15,
-                                        model_avg_roi = 0.0,
-                                        symbols = None,
-                                        investmentAmountPerTrade=1000)
+        abs_change_pct_threshold = 0.02,
+        actions = [int(TradeAction.Buy), int(TradeAction.Sell)],
+        average_uncertainty = 0.15,
+        model_avg_roi = 0.0,
+        symbols = None,
+        investmentAmountPerTrade=1000)
 
 # Option 2:
 #   Execute Predicto AutoTrader using "My Picks" as you picked them in Predicto website!
@@ -80,7 +80,7 @@ predicto_api_wrapper.submit_latest_trade_picks(
 #   It will submit last day's "My Picks"
 #   Note: Make sure you understand the risks if you are using real money!
 predicto_api_wrapper.submit_my_latest_trade_picks(
-                                        investmentAmountPerTrade=1000)
+        investmentAmountPerTrade=1000)
 ```
 
 ## AutoTrader daily script
