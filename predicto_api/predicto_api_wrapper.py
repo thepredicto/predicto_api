@@ -10,8 +10,15 @@ class TradeAction(enum.IntEnum):
     Buy = 1
     Sell = 2
 
+class TradeOrderType(enum.IntEnum):
+    Market = 0
+    Bracket = 1
+    TrailingStop = 2
+
 class PredictoApiWrapper(object):
-    """Api wrapper class for Predicto (https://predic.to)"""
+    """
+    Api wrapper class for Predicto (https://predic.to)
+    """
     
     _base_url = 'https://predic.to'
 
@@ -23,7 +30,7 @@ class PredictoApiWrapper(object):
         """Sets the alpaca api wrapper object. It will be used to submit orders to Alpaca.
         
         Args:
-            alpaca_api_wrapper: The AlpacaApiWrapper object to use
+            alpaca_api_wrapper : The AlpacaApiWrapper object to use
         """
         self._alpaca_api_wrapper = alpaca_api_wrapper
 
@@ -31,12 +38,12 @@ class PredictoApiWrapper(object):
         """Returns a list of supported tickers
         
         Args:
-            return_pandas_df: returns a pandas dataframe if True, json otherwise
+            return_pandas_df : returns a pandas dataframe if True, json otherwise
         
         Returns:
             json with all the supported tickers
         """
-        endpoint = "{0}/stocks/all".format(PredictoApiWrapper._base_url)
+        endpoint = "{0}/stocks/allwithforecast".format(PredictoApiWrapper._base_url)
         jsn = requests.get(endpoint, headers=self._head).json()
         
         return jsn
@@ -45,8 +52,8 @@ class PredictoApiWrapper(object):
         """Returns the forecast of the selected ticker for selected date
         
         Args:
-            ticker: the ticker of the stock
-            date: the date of the forecast (YYYY-MM-DD format)
+            ticker : the ticker of the stock
+            date   : the date of the forecast (YYYY-MM-DD format)
         
         Returns:
             json with retrieved forecast
@@ -62,8 +69,8 @@ class PredictoApiWrapper(object):
         """Returns generated trade pick of the selected ticker for selected date based on that date's forecast
         
         Args:
-            ticker: the ticker of the stock
-            date: the date of the forecast (YYYY-MM-DD format)
+            ticker : the ticker of the stock
+            date   : the date of the forecast (YYYY-MM-DD format)
         
         Returns:
             json with retrieved trade pick
@@ -80,7 +87,7 @@ class PredictoApiWrapper(object):
         As they appear in https://predic.to/exploreroi?my=1
         
         Args:
-            date: the date of trade picks (YYYY-MM-DD format)
+            date : the date of trade picks (YYYY-MM-DD format)
         
         Returns:
             json array with retrieved trade picks
@@ -96,7 +103,7 @@ class PredictoApiWrapper(object):
         """Returns recent performance GIF url for selected ticker
         
         Args:
-            ticker: the ticker of the stock
+            ticker : the ticker of the stock
         
         Returns:
             the gif URL
@@ -110,9 +117,9 @@ class PredictoApiWrapper(object):
         """Helper method to retrieve forecast and trade pick for given ticker and date
         
         Args:
-            ticker: the ticker of the stock
-            date: the date of the forecast (YYYY-MM-DD format)
-            print_it: whether to print retrieved info and plot
+            ticker   : the ticker of the stock
+            date     : the date of the forecast (YYYY-MM-DD format)
+            print_it : whether to print retrieved info and plot
         
         Returns:
             The forecast json and trade pick json as (forecast_json, trade_pick_json)
@@ -157,7 +164,8 @@ class PredictoApiWrapper(object):
                                         average_uncertainty = 0.15,
                                         model_avg_roi = 0.0,
                                         symbols = None,
-                                        investmentAmountPerTrade = 1000):
+                                        investment_per_trade = 1000,
+                                        trade_order_type = TradeOrderType.Bracket):
         """Call this daily just before market open (or during). It will use last day's Trade Picks.
         
         Args:
@@ -166,7 +174,8 @@ class PredictoApiWrapper(object):
             average_uncertainty      : threshold for average uncertainty of forecast - the higher the riskier, default 0.15 (15%)
             model_avg_roi            : threshold for the historical average ROI for all the Trade Picks from the stock's model, default 0.0 (non negative ROI)
             symbols                  : array with symbols to trade, if None all of them will be considered
-            investmentAmountPerTrade : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
+            investment_per_trade     : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
+            trade_order_type         : one of TradeOrderType.Bracket or TradeOrderType.TrailingStop. Bracket will set fixed stop loss and take profit prices. TrailingStop will set a trailing stop price.
         """
         # retrieve all supported stocks
         stocks_json = self.get_supported_tickers()
@@ -211,10 +220,10 @@ class PredictoApiWrapper(object):
                         and tp_json['AvgUncertainty'] <= average_uncertainty \
                         and tp_json['AverageROI'] >= model_avg_roi:
                         
-                    print('\tMatched Expected change : {0:.2f} !'.format(change_pct))
+                    print('\tMatched Expected change : {0:.2f}% !'.format(change_pct * 100))
                     print('\t        Trade Action    : {0} !'.format(TradeAction(tp_json['TradeAction']).name))
-                    print('\t        Avg Uncertainty : {0:.2f} !'.format(tp_json['AvgUncertainty']))
-                    print('\t        Avg ROI of model: {0:.2f} !'.format(tp_json['AverageROI']))
+                    print('\t        Avg Uncertainty : {0:.2f}% !'.format(tp_json['AvgUncertainty'] * 100))
+                    print('\t        Avg ROI of model: {0:.2f}% !'.format(tp_json['AverageROI'] * 100))
 
                     # Create a client order id, for easy tracking
                     client_order_id = 'Predicto__{0}_{1}_{2}_{3}_bracket'.format(
@@ -225,13 +234,14 @@ class PredictoApiWrapper(object):
 
                     # If all looks good, we can now submit our bracket order (market order + stop loss + take profit)
                     print()
-                    print('> Alpaca: Submitting bracket order...')
-                    print('------------------------')
-                    bracket_order_result = self._alpaca_api_wrapper.submit_bracket_order(
+                    print('> Alpaca: Submitting {0} order...'.format(trade_order_type.name))
+                    print('------------------------') 
+                    alpaca_order_result = self._alpaca_api_wrapper.submit_order(
+                        trade_order_type,
                         TradeAction(tp_json['TradeAction']), 
                         symbol, 
                         None, 
-                        investmentAmountPerTrade, 
+                        investment_per_trade, 
                         tp_json['StartingPrice'], 
                         tp_json['TargetSellPrice'], 
                         tp_json['TargetStopLossPrice'], 
@@ -239,9 +249,9 @@ class PredictoApiWrapper(object):
                     print('------------------------')
                     print()
 
-                    if bracket_order_result is not None:
+                    if alpaca_order_result is not None:
                         # unpack in case we want to process or store those values
-                        (alpaca_order, newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity) = bracket_order_result
+                        (alpaca_order, newStartingPrice, newTargetPrice, newStopLossPrice, trailing_percent, newQuantity) = alpaca_order_result
                         # add it to our 'submitted' list
                         symbols_submitted.append(symbol)
 
@@ -256,13 +266,14 @@ class PredictoApiWrapper(object):
 
         print('Submitted {0} hedged orders: {1}'.format(len(symbols_submitted), str(symbols_submitted)))
 
-    def submit_my_latest_trade_picks(self, investmentAmountPerTrade):
+    def submit_my_latest_trade_picks(self, investment_per_trade, trade_order_type):
         """Call this daily just before market open (or during). It will use last day's Trade Picks that YOU have picked in Predicto website.
         You can select your Trade Picks in https://predic.to/autotrader
         You can see your latest Trade picks in https://predic.to/exploreroi?my=1
 
         Args:
-            investmentAmountPerTrade : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
+            investment_per_trade : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
+            trade_order_type     : one of TradeOrderType.Bracket or TradeOrderType.TrailingStop. Bracket will set fixed stop loss and take profit prices. TrailingStop will set a trailing stop price.
         """
         # get Trade Picks that were picked yesterday
         generated_date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
@@ -284,10 +295,10 @@ class PredictoApiWrapper(object):
             try:
                 change_pct = (tp_json['TargetSellPrice'] - tp_json['StartingPrice']) / tp_json['StartingPrice']
 
-                print('\t Expected change : {0:.2f} !'.format(change_pct))
+                print('\t Expected change : {0:.2f}% !'.format(change_pct * 100))
                 print('\t Trade Action    : {0} !'.format(TradeAction(tp_json['TradeAction']).name))
-                print('\t Avg Uncertainty : {0:.2f} !'.format(tp_json['AvgUncertainty']))
-                print('\t Avg ROI of model: {0:.2f} !'.format(tp_json['AverageROI']))
+                print('\t Avg Uncertainty : {0:.2f}% !'.format(tp_json['AvgUncertainty'] * 100))
+                print('\t Avg ROI of model: {0:.2f}% !'.format(tp_json['AverageROI'] * 100))
 
                 # Create a client order id, for easy tracking
                 client_order_id = 'Predicto__{0}_{1}_{2}_{3}_bracket'.format(
@@ -298,13 +309,14 @@ class PredictoApiWrapper(object):
 
                 # If all looks good, we can now submit our bracket order (market order + stop loss + take profit)
                 print()
-                print('> Alpaca: Submitting bracket order...')
+                print('> Alpaca: Submitting {0} order...'.format(trade_order_type.name))
                 print('------------------------')
-                bracket_order_result = self._alpaca_api_wrapper.submit_bracket_order(
+                alpaca_order_result = self._alpaca_api_wrapper.submit_order(
+                    trade_order_type,
                     TradeAction(tp_json['TradeAction']), 
                     symbol, 
                     None, 
-                    investmentAmountPerTrade, 
+                    investment_per_trade, 
                     tp_json['StartingPrice'], 
                     tp_json['TargetSellPrice'], 
                     tp_json['TargetStopLossPrice'], 
@@ -312,9 +324,9 @@ class PredictoApiWrapper(object):
                 print('------------------------')
                 print()
 
-                if bracket_order_result is not None:
+                if alpaca_order_result is not None:
                     # unpack in case we want to process or store those values
-                    (alpaca_order, newStartingPrice, newTargetPrice, newStopLossPrice, newQuantity) = bracket_order_result
+                    (alpaca_order, newStartingPrice, newTargetPrice, newStopLossPrice, trailing_percent, newQuantity) = alpaca_order_result
                     # add it to our 'submitted' list
                     symbols_submitted.append(symbol)
                 

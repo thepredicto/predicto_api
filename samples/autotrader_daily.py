@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../predicto_api/")
 
-from predicto_api_wrapper import PredictoApiWrapper, TradeAction
+from predicto_api_wrapper import PredictoApiWrapper, TradeAction, TradeOrderType
 from alpaca_api_wrapper import AlpacaApiWrapper
 
 # initialize alpaca api wrapper
@@ -22,15 +22,17 @@ predicto_api_wrapper.set_alpaca_api_wrapper(alpaca_wrapper)
 #   average_uncertainty      : threshold for average uncertainty of forecast - the higher the riskier, default 0.15 (15%)
 #   model_avg_roi            : threshold for the historical average ROI for all the Trade Picks from the stock's model, default 0.0 (non negative ROI)
 #   symbols                  : array with symbols to trade, if None all of them will be considered
-#   investmentAmountPerTrade : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
+#   investment_per_trade     : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
+#   trade_order_type         : TradeOrderType.Bracket or TradeOrderType.TrailingStop. Bracket will set fixed stop loss and take profit prices. TrailingStop will set a trailing stop price.
 
 # Execute Predicto AutoTrader!
 # You can schedule this script to run daily before market open (9.30am E.T.)
 # Note: Make sure you understand the risks if you are using real money!
 predicto_api_wrapper.submit_latest_trade_picks(
-                                        abs_change_pct_threshold = 0.02,
-                                        actions = [int(TradeAction.Buy), int(TradeAction.Sell)],
-                                        average_uncertainty = 0.15,
-                                        model_avg_roi = 0.0,
-                                        symbols = None,
-                                        investmentAmountPerTrade=1000)
+    abs_change_pct_threshold = 0.02,
+    actions = [int(TradeAction.Buy), int(TradeAction.Sell)],
+    average_uncertainty = 0.15,
+    model_avg_roi = 0.0,
+    symbols = None,
+    investment_per_trade=1000,
+    trade_order_type=TradeOrderType.Bracket)
