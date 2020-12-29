@@ -15,13 +15,13 @@ Start by installing required packages
 pip install -r predicto_api/requirements.txt
 ```
 
-To use predicto_api wrapper, you'll need a valid account at https://predic.to, and an `api_key` that you can find in your https://predic.to/settings page.
+To use predicto_api wrapper, you'll need a valid account at https://predic.to, and an `api_key` that you can find in your https://predic.to/account page.
 
 ```python
 import pandas as pd
 from predicto_api_wrapper import PredictoApiWrapper
 
-# retrieve api_key from your https://predic.to/settings page
+# retrieve api_key from your https://predic.to/account page
 api_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
 # prepare our predicto api wrapper
