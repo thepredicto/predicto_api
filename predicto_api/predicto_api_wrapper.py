@@ -22,8 +22,8 @@ class PredictoApiWrapper(object):
     
     _base_url = 'https://predic.to'
 
-    def __init__(self, apiSessionId):
-        self._head = {'Cookie': 'session={0}'.format(apiSessionId)}
+    def __init__(self, api_key):
+        self._head = {'predicto_api_key': api_key}
         self._alpaca_api_wrapper = None
 
     def set_alpaca_api_wrapper(self, alpaca_api_wrapper):
