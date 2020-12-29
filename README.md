@@ -56,8 +56,8 @@ alpaca_api_secret_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 alpaca_wrapper = AlpacaApiWrapper(alpaca_api_endpoint, alpaca_api_key_id, alpaca_api_secret_key)
 
 # initialize predicto api wrapper
-predicto_api_session_id = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-predicto_api_wrapper = PredictoApiWrapper(predicto_api_session_id)
+predicto_api_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+predicto_api_wrapper = PredictoApiWrapper(predicto_api_key)
 predicto_api_wrapper.set_alpaca_api_wrapper(alpaca_wrapper)
 
 # Option 1:
