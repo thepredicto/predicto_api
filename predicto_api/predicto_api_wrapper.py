@@ -23,7 +23,7 @@ class PredictoApiWrapper(object):
     _base_url = 'https://predic.to'
 
     def __init__(self, api_key):
-        self._head = {'predicto_api_key': api_key}
+        self._head = {'X-Predicto-Api-Key': api_key}
         self._alpaca_api_wrapper = None
 
     def set_alpaca_api_wrapper(self, alpaca_api_wrapper):
