@@ -15,17 +15,17 @@ Start by installing required packages
 pip install -r predicto_api/requirements.txt
 ```
 
-To use predicto_api wrapper, you'll need a valid account at https://predic.to, and an `api_session_id` that you can find in your settings page.
+To use predicto_api wrapper, you'll need a valid account at https://predic.to, and an `api_key` that you can find in your https://predic.to/settings page.
 
 ```python
 import pandas as pd
 from predicto_api_wrapper import PredictoApiWrapper
 
-# retrieve api_session_id from your https://predic.to/settings page
-api_session_id = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+# retrieve api_key from your https://predic.to/settings page
+api_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
 # prepare our predicto api wrapper
-predicto_api_wrapper = PredictoApiWrapper(api_session_id)
+predicto_api_wrapper = PredictoApiWrapper(api_key)
 
 # get suppported tickers for which daily forecasts are available
 tickers_json = predicto_api_wrapper.get_supported_tickers()
