@@ -1,7 +1,9 @@
 # predicto_api
-Python library for predicto api for financial timeseries forecasting.
+Python library for Predicto API.
 
-Predicto generates daily forecasts and Trade Picks for a number of stocks using intelligible Deep Learning models.
+Predicto generates daily forecasts and Trade Picks for a number of stocks.
+
+Powered by intelligible Deep Learning models, based on News & Options Data.
 
 More info at [https://predic.to](https://predic.to)
 
@@ -62,7 +64,7 @@ predicto_api_wrapper.set_alpaca_api_wrapper(alpaca_wrapper)
 
 # Option 1:
 #   Execute Predicto AutoTrader
-#   You can schedule this script to run daily before market open (9.30am E.T.).
+#   You can schedule this script to run daily just after market open (9.31am E.T.).
 #   It will submit last day's Trade Picks matching your criteria.
 #   Note: Make sure you understand the risks if you are using real money!
 predicto_api_wrapper.submit_latest_trade_picks(
@@ -77,7 +79,7 @@ predicto_api_wrapper.submit_latest_trade_picks(
 # Option 2:
 #   Execute Predicto AutoTrader using "My Picks" as you picked them in Predicto website!
 #   Manually pick them every night at https://predic.to/autotrader
-#   You can schedule this script to run daily before market open (9.30am E.T.)
+#   You can schedule this script to run daily just after market open (9.31am E.T.)
 #   It will submit last day's "My Picks"
 #   Note: Make sure you understand the risks if you are using real money!
 predicto_api_wrapper.submit_my_latest_trade_picks(
