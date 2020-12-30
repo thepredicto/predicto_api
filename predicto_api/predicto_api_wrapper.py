@@ -34,6 +34,15 @@ class PredictoApiWrapper(object):
         """
         self._alpaca_api_wrapper = alpaca_api_wrapper
 
+    def _validate_api_response(self, response):
+        """Simple api response validation. Raises exception on bad response.
+        
+        Args:
+            response : the response object
+        """
+        if response.status_code != 200:
+            raise Exception('Predicto API Error {0}: {1}'.format(response.status_code, response.text))
+
     def get_supported_tickers(self):
         """Returns a list of supported tickers
         
@@ -44,9 +53,11 @@ class PredictoApiWrapper(object):
             json with all the supported tickers
         """
         endpoint = "{0}/stocks/allwithforecast".format(PredictoApiWrapper._base_url)
-        jsn = requests.get(endpoint, headers=self._head).json()
-        
-        return jsn
+        response = requests.get(endpoint, headers=self._head)
+
+        self._validate_api_response(response)
+
+        return response.json()
     
     def get_forecast(self, ticker, date):
         """Returns the forecast of the selected ticker for selected date
@@ -59,8 +70,11 @@ class PredictoApiWrapper(object):
             json with retrieved forecast
         """
         endpoint = "{0}/api/forecasting/{1}/{2}/-1".format(PredictoApiWrapper._base_url, ticker, date)
-        jsn = requests.get(endpoint, headers=self._head).json()
+        response = requests.get(endpoint, headers=self._head)
         
+        self._validate_api_response(response)
+        
+        jsn = response.json()
         forecasting_json = jsn[0]['PredictionsJson'] if len(jsn) > 0 else None
         
         return forecasting_json
@@ -76,8 +90,11 @@ class PredictoApiWrapper(object):
             json with retrieved trade pick
         """
         endpoint = "{0}/api/forecasting/tradepicks/{1}/{2}/_,0.0,0".format(PredictoApiWrapper._base_url, ticker, date)
-        jsn = requests.get(endpoint, headers=self._head).json()
+        response = requests.get(endpoint, headers=self._head)
         
+        self._validate_api_response(response)
+        
+        jsn = response.json()
         trade_pick_json = jsn['Recommendations'][0] if len(jsn['Recommendations']) > 0 else None
         
         return trade_pick_json
@@ -93,8 +110,11 @@ class PredictoApiWrapper(object):
             json array with retrieved trade picks
         """
         endpoint = "{0}/api/forecasting/tradepicks/_/{1}/_,0.0,1".format(PredictoApiWrapper._base_url, date)
-        jsn = requests.get(endpoint, headers=self._head).json()
+        response = requests.get(endpoint, headers=self._head)
         
+        self._validate_api_response(response)
+        
+        jsn = response.json()
         my_trade_picks_json = jsn['Recommendations']
         
         return my_trade_picks_json
@@ -109,8 +129,11 @@ class PredictoApiWrapper(object):
             the gif URL
         """
         endpoint = "{0}/api/history/blobs/{1}".format(PredictoApiWrapper._base_url, ticker)
-        jsn = requests.get(endpoint, headers=self._head).json()
-
+        response = requests.get(endpoint, headers=self._head)
+        
+        self._validate_api_response(response)
+        
+        jsn = response.json()
         return jsn[0]['ForecastModelGifBlobUrl'].split("?")[0]
 
     def get_forecast_and_tradepick_info(self, ticker, date, print_it=False):
