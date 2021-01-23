@@ -26,7 +26,12 @@ api_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
 # prepare our predicto api wrapper
 predicto_api_wrapper = PredictoApiWrapper(api_key)
+```
 
+## Using Predicto to retrieve stock forecasts and trade picks
+For detailed usage, check the [predicto_api_example_usage.ipynb](Notebooks/predicto_api_example_usage.ipynb) in the `Notebooks` folder.
+
+```python
 # get suppported tickers for which daily forecasts are available
 tickers_json = predicto_api_wrapper.get_supported_tickers()
 tickers_df = pd.DataFrame(tickers_json)
