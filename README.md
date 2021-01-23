@@ -42,6 +42,27 @@ forecast_df = pd.read_json(forecast_json, orient='index')
 # get trade pick based on that forecast (entry, exit, stop-loss price)
 trade_pick_json = predicto_api_wrapper.get_trade_pick(ticker, date)
 ```
+
+## Using Predicto to get Nasdaq Outlook Score
+Nasdaq Outlook Score gives you a stock market feeling with a 15-days ahead horizon.
+It is based on aggregated forecasting statistics from Nasdaq related generated trades by our Deep Learning models.
+For detailed usage, check the [predicto_api_nasdaq_outlook_score.ipynb](Notebooks/predicto_api_nasdaq_outlook_score.ipynb) in the `Notebooks` folder.
+
+```python
+# get latest Predicto Nasdaq Outlook Score
+outlook_json = predicto_api_wrapper.get_nasdaq_outlook_score(None)
+```
+
+```
+{
+        'GoingDownMean': -0.012874223009800387,
+        'GoingDownTotal': 8,
+        'GoingUpMean': 0.010137644742666858,
+        'GoingUpTotal': 20,
+        'OutlookScore': 0.5
+}
+```
+
 ## Using Predicto with Alpaca to setup daily AutoTrader
 Make sure you understand the risks if you are using real money!
 We recommend that you start by experimenting with an Alpaca Paper acccount.

@@ -99,6 +99,24 @@ class PredictoApiWrapper(object):
         
         return trade_pick_json
         
+    def get_nasdaq_outlook_score(self, date):
+        """Returns a score indicating the Nasdaq Stock Market feeling with a 15-days ahead horizon. 
+            Based on aggregated daily forecasting statistics from Nasdaq related stocks.
+        
+        Args:
+            date   : the date of the outlook generation (YYYY-MM-DD format), pass None for latest
+        
+        Returns:
+            json with retrieved outlook score information
+        """
+        date = '_' if date is None else date
+        endpoint = "{0}/api/forecasting/outlook/{1}/200,0.0".format(PredictoApiWrapper._base_url, date)
+        response = requests.get(endpoint, headers=self._head)
+        
+        self._validate_api_response(response)
+        
+        return response.json()
+
     def get_my_trade_picks(self, date):
         """Returns a list of trade picks generated on given date that user has selected.
         As they appear in https://predic.to/exploreroi?my=1
