@@ -61,11 +61,11 @@ outlook_json = predicto_api_wrapper.get_nasdaq_outlook_score(None)
 
 ```
 {
-        'OutlookScore': 0.5,
-        'GoingDownMean': -0.012874223009800387,
-        'GoingDownTotal': 8,
-        'GoingUpMean': 0.010137644742666858,
-        'GoingUpTotal': 20
+  'OutlookScore': 0.5,
+  'GoingDownMean': -0.012874223009800387,
+  'GoingDownTotal': 8,
+  'GoingUpMean': 0.010137644742666858,
+  'GoingUpTotal': 20
 }
 ```
 
