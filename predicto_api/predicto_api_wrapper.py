@@ -15,6 +15,12 @@ class TradeOrderType(enum.IntEnum):
     Bracket = 1
     TrailingStop = 2
 
+class OutlookScoreType(enum.IntEnum):
+    Nasdaq100 = 1
+    Nasdaq100_Volatility = 201
+    Nasdaq100_Uncertainty = 301
+
+
 class PredictoApiWrapper(object):
     """
     Api wrapper class for Predicto (https://predic.to)
@@ -99,18 +105,57 @@ class PredictoApiWrapper(object):
         
         return trade_pick_json
         
-    def get_nasdaq_outlook_score(self, date):
+    def get_nasdaq_outlook_score_since(self, since_date):
         """Returns a score indicating the Nasdaq Stock Market feeling with a 15-days ahead horizon. 
             Based on aggregated daily forecasting statistics from Nasdaq related stocks.
         
         Args:
-            date   : the date of the outlook generation (YYYY-MM-DD format), pass None for latest
+            since_date   : starting date (YYYY-MM-DD format)
         
         Returns:
-            json with retrieved outlook score information
+            json array with retrieved outlook information
         """
-        date = '_' if date is None else date
-        endpoint = "{0}/api/forecasting/outlook/{1}/200,0.0".format(PredictoApiWrapper._base_url, date)
+        since_date = '_' if since_date is None else since_date
+        endpoint = "{0}/api/forecasting/outlook/since/{1}/{2},200".format(
+                PredictoApiWrapper._base_url, since_date, int(OutlookScoreType.Nasdaq100))
+        response = requests.get(endpoint, headers=self._head)
+        
+        self._validate_api_response(response)
+        
+        return response.json()
+
+    def get_nasdaq_forecasted_volatility_since(self, since_date):
+        """Returns a score indicating the Nasdaq Forecasted Volatility with a 15-days ahead horizon. 
+            Based on aggregated daily forecasting statistics from Nasdaq related stocks.
+        
+        Args:
+            since_date   : starting date (YYYY-MM-DD format)
+        
+        Returns:
+            json array with retrieved outlook information
+        """
+        since_date = '_' if since_date is None else since_date
+        endpoint = "{0}/api/forecasting/outlook/since/{1}/{2},200".format(
+                PredictoApiWrapper._base_url, since_date, int(OutlookScoreType.Nasdaq100_Volatility))
+        response = requests.get(endpoint, headers=self._head)
+        
+        self._validate_api_response(response)
+        
+        return response.json()
+
+    def get_nasdaq_models_uncertainty_since(self, since_date):
+        """Returns a score indicating the Nasdaq Models Uncertainty with a 15-days ahead horizon. 
+            Based on aggregated daily forecasting statistics from Nasdaq related stocks.
+        
+        Args:
+            since_date   : starting date (YYYY-MM-DD format)
+        
+        Returns:
+            json array with retrieved outlook information
+        """
+        since_date = '_' if since_date is None else since_date
+        endpoint = "{0}/api/forecasting/outlook/since/{1}/{2},200".format(
+                PredictoApiWrapper._base_url, since_date, int(OutlookScoreType.Nasdaq100_Uncertainty))
         response = requests.get(endpoint, headers=self._head)
         
         self._validate_api_response(response)

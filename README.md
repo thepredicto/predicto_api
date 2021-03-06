@@ -49,25 +49,32 @@ forecast_df = pd.read_json(forecast_json, orient='index')
 trade_pick_json = predicto_api_wrapper.get_trade_pick(ticker, date)
 ```
 
-## Using Predicto to get Nasdaq Outlook Score
-Nasdaq Outlook Score gives you a stock market feeling with a 15-days ahead horizon.
-It is based on aggregated forecasting statistics from Nasdaq related generated trades by our Deep Learning models.
-For detailed usage, check the [predicto_api_nasdaq_outlook_score.ipynb](Notebooks/predicto_api_nasdaq_outlook_score.ipynb) in the `Notebooks` folder.
+## Retrieving Predicto Nasdaq-100 Signals
+Predicto Nasdaq Signals are generated daily and are based on the combined forecasting power of hundreds of Deep Learning models.
+`Nasdaq Outlook Score` gives you a stock market feeling with a 15-days ahead horizon.
+`Nasdaq Forecasted Volatility` is the standard deviation of the forecasted 15-days ahead movements (percentage). 
+`Nasdaq Models Uncertainty` is a measurement of how uncertain our models are with current market conditions (percentage). 
+
+All those signals are based on aggregated forecasting statistics from Nasdaq related generated trades by our Deep Learning models.
+
+For detailed information, please check https://predic.to/outlook and https://predic.to/faq.
+
+For detailed usage, check the [predicto_api_nasdaq_signals.ipynb](Notebooks/predicto_api_nasdaq_signals.ipynb) in the `Notebooks` folder.
 
 ```python
-# get latest Predicto Nasdaq Outlook Score
-outlook_json = predicto_api_wrapper.get_nasdaq_outlook_score(None)
+# retrieve info for last 20 days
+since_date = (datetime.today() - timedelta(days=20)).strftime('%Y-%m-%d')
+
+# get Nasdaq Outlook Score information
+outlook_json = predicto_api_wrapper.get_nasdaq_outlook_score_since(since_date)
+
+# get Nasdaq Forecasted Volatility information
+volatility_json = predicto_api_wrapper.get_nasdaq_forecasted_volatility_since(since_date)
+
+# get Models Uncertainty information
+uncertainty_json = predicto_api_wrapper.get_nasdaq_models_uncertainty_since(since_date)
 ```
 
-```
-{
-  'OutlookScore': 0.5,
-  'GoingDownMean': -0.012874223009800387,
-  'GoingDownTotal': 8,
-  'GoingUpMean': 0.010137644742666858,
-  'GoingUpTotal': 20
-}
-```
 
 ## Using Predicto with Alpaca to setup daily AutoTrader
 Make sure you understand the risks if you are using real money!
