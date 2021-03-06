@@ -1,9 +1,7 @@
 # predicto_api
 Python library for Predicto API.
 
-Predicto generates daily forecasts and Trade Picks for a number of stocks.
-
-Powered by intelligible Deep Learning models, based on News & Options Data.
+Predicto generates stock market signals and short-term forecasts daily. Powered by intelligible Deep Learning models, based on News & Options Data.
 
 More info at [https://predic.to](https://predic.to)
 
