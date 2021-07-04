@@ -22,7 +22,7 @@ from predicto_api_wrapper import PredictoApiWrapper
 api_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
 # prepare our predicto api wrapper
-predicto_api_wrapper = PredictoApiWrapper(api_key)
+api = PredictoApiWrapper(api_key)
 ```
 
 ## Retrieving Predicto Nasdaq-100 Signals
@@ -43,13 +43,13 @@ For detailed usage, check the [predicto_api_nasdaq_signals.ipynb](Notebooks/pred
 since_date = (datetime.today() - timedelta(days=20)).strftime('%Y-%m-%d')
 
 # get Nasdaq Outlook Score information
-outlook_json = predicto_api_wrapper.get_nasdaq_outlook_score_since(since_date)
+outlook_json = api.get_nasdaq_outlook_score_since(since_date)
 
 # get Nasdaq Forecasted Volatility information
-volatility_json = predicto_api_wrapper.get_nasdaq_forecasted_volatility_since(since_date)
+volatility_json = api.get_nasdaq_forecasted_volatility_since(since_date)
 
 # get Models Uncertainty information
-uncertainty_json = predicto_api_wrapper.get_nasdaq_models_uncertainty_since(since_date)
+uncertainty_json = api.get_nasdaq_models_uncertainty_since(since_date)
 ```
 
 ## Retrieving AutoTrader's stock forecasts and trade picks
@@ -59,7 +59,7 @@ For detailed usage, check the [predicto_api_example_usage.ipynb](Notebooks/predi
 import pandas as pd
 
 # get suppported tickers for which daily forecasts are available
-tickers_json = predicto_api_wrapper.get_supported_tickers()
+tickers_json = api.get_supported_tickers()
 tickers_df = pd.DataFrame(tickers_json)
 
 # define the ticker and date we are interested in (use yesterday's date to get latest)
@@ -67,11 +67,11 @@ ticker = 'TSLA'
 date = '2020-11-28'
 
 # get forecast dataframe
-forecast_json = predicto_api_wrapper.get_forecast(ticker, date)
+forecast_json = api.get_forecast(ticker, date)
 forecast_df = pd.read_json(forecast_json, orient='index')
 
 # get trade pick based on that forecast (entry, exit, stop-loss price)
-trade_pick_json = predicto_api_wrapper.get_trade_pick(ticker, date)
+trade_pick_json = api.get_trade_pick(ticker, date)
 ```
 
 ## Using Predicto with Alpaca to setup daily AutoTrader
@@ -91,15 +91,15 @@ alpaca_wrapper = AlpacaApiWrapper(alpaca_api_endpoint, alpaca_api_key_id, alpaca
 
 # initialize predicto api wrapper
 predicto_api_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-predicto_api_wrapper = PredictoApiWrapper(predicto_api_key)
-predicto_api_wrapper.set_alpaca_api_wrapper(alpaca_wrapper)
+api = PredictoApiWrapper(predicto_api_key)
+api.set_alpaca_api_wrapper(alpaca_wrapper)
 
 # Option 1:
 #   Execute Predicto AutoTrader
 #   You can schedule this script to run daily just after market open (9.31am E.T.).
 #   It will submit last day's Trade Picks matching your criteria.
 #   Note: Make sure you understand the risks if you are using real money!
-predicto_api_wrapper.submit_latest_trade_picks(
+api.submit_latest_trade_picks(
         abs_change_pct_threshold = 0.02,
         actions = [int(TradeAction.Buy), int(TradeAction.Sell)],
         average_uncertainty = 0.15,
@@ -114,7 +114,7 @@ predicto_api_wrapper.submit_latest_trade_picks(
 #   You can schedule this script to run daily just after market open (9.31am E.T.)
 #   It will submit last day's "My Picks"
 #   Note: Make sure you understand the risks if you are using real money!
-predicto_api_wrapper.submit_my_latest_trade_picks(
+api.submit_my_latest_trade_picks(
         investment_per_trade=1000,
         trade_order_type=TradeOrderType.Bracket)
 ```
