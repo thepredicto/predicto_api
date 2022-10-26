@@ -58,7 +58,7 @@ class PredictoApiWrapper(object):
         Returns:
             json with all the supported tickers
         """
-        endpoint = "{0}/stocks/allwithforecast".format(PredictoApiWrapper._base_url)
+        endpoint = "{0}/symbols/allwithforecast".format(PredictoApiWrapper._base_url)
         response = requests.get(endpoint, headers=self._head)
 
         self._validate_api_response(response)
@@ -75,7 +75,7 @@ class PredictoApiWrapper(object):
         Returns:
             json with retrieved forecast
         """
-        endpoint = "{0}/api/forecasting/{1}/{2}/-2".format(PredictoApiWrapper._base_url, ticker, date)
+        endpoint = "{0}/api/forecasting/{1}/{2}/20".format(PredictoApiWrapper._base_url, ticker, date)
         response = requests.get(endpoint, headers=self._head)
         
         self._validate_api_response(response)
@@ -224,7 +224,7 @@ class PredictoApiWrapper(object):
                 plt.show()
 
                 # print forecast info
-                print(forecast_df[['Prediction', 'Uncertainty']])
+                print(forecast_df[['Prediction', 'HighConfInt', 'LowConfInt']])
                 print()
 
             if trade_pick_json is not None:
