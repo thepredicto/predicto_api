@@ -407,8 +407,7 @@ class AlpacaApiWrapper(object):
         Returns:
             The latest price
         """
-        barset = self.api.get_barset(symbol, '1Min', limit=5)
-        bars = barset[symbol]
-        latestPrice = bars[-1].c
+        barset = self.api.get_latest_bar(symbol)
+        latestPrice = barset.c
 
         return latestPrice
