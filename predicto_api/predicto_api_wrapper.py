@@ -58,7 +58,7 @@ class PredictoApiWrapper(object):
         Returns:
             json with all the supported tickers
         """
-        endpoint = "{0}/symbols/allwithforecast".format(PredictoApiWrapper._base_url)
+        endpoint = "{0}/stocks/allwithforecast".format(PredictoApiWrapper._base_url)
         response = requests.get(endpoint, headers=self._head)
 
         self._validate_api_response(response)

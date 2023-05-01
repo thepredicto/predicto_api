@@ -12,6 +12,8 @@ class AlpacaApiWrapper(object):
     """
     Alpaca api wrapper for use with Predicto api wrapper
     """
+    
+    _roundingDecimals = 2
 
     def __init__(self, apiEndpoint, apiKeyId, apiSecretKey):
         self.api = tradeapi.REST(apiKeyId, apiSecretKey, apiEndpoint, api_version='v2') 
@@ -55,7 +57,7 @@ class AlpacaApiWrapper(object):
         sinceDate = str((datetime.utcnow() - timedelta(hours=7)))
         filledOrders = self.get_filled_orders_for_symbol_since(symbol, sinceDate)
         if filledOrders is not None and len(filledOrders) > 0:
-            print('Error: bought or sold this symbol in the last 7 hours - This check exists to avoid Day Trading Pattern flag, feel freee to remove.')
+            print('Error: bought or sold this symbol in the last 7 hours - This check exists to avoid Day Trading Pattern flag, feel free to remove.')
             return None
 
         # validate prices
@@ -84,10 +86,10 @@ class AlpacaApiWrapper(object):
                 time_in_force='gtc',
                 order_class='bracket',
                 take_profit={ 
-                    'limit_price': str(targetSellPrice)
+                    'limit_price': str(round(targetSellPrice, AlpacaApiWrapper._roundingDecimals))
                 },
                 stop_loss={
-                    'stop_price': str(newStopLossPrice)
+                    'stop_price': str(round(newStopLossPrice, AlpacaApiWrapper._roundingDecimals))
                 },
                 client_order_id=client_order_id
             )
@@ -213,10 +215,10 @@ class AlpacaApiWrapper(object):
             time_in_force='gtc',
             order_class='oco',
             take_profit={ 
-                'limit_price': str(targetSellPrice)
+                'limit_price': str(round(targetSellPrice, AlpacaApiWrapper._roundingDecimals))
             },
             stop_loss={
-                'stop_price': str(stopLossPrice)
+                'stop_price': str(round(stopLossPrice, AlpacaApiWrapper._roundingDecimals))
             },
             client_order_id=client_order_id
         )
