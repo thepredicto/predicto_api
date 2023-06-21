@@ -106,7 +106,8 @@ api.submit_latest_trade_picks(
         model_avg_roi = 0.0,
         symbols = None,
         investment_per_trade=1000,
-        trade_order_type=TradeOrderType.Bracket)
+        trade_order_type=TradeOrderType.Bracket,
+        stoploss_fixed_pct=None)
 
 # Option 2:
 #   Execute Predicto AutoTrader using "My Picks" as you picked them in Predicto website!

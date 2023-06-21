@@ -24,7 +24,8 @@ predicto_api_wrapper.set_alpaca_api_wrapper(alpaca_wrapper)
 #   symbols                  : array with symbols to trade, if None all of them will be considered
 #   investment_per_trade     : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
 #   trade_order_type         : TradeOrderType.Bracket or TradeOrderType.TrailingStop. Bracket will set fixed stop loss and take profit prices. TrailingStop will set a trailing stop price.
-
+#   stoploss_fixed_pct       : if provided, stoploss will be set at this fixed percentage (e.g. value 0.02 (2%) will set stoploss to -2% on a BUY order, and +2% on a SELL order)
+ 
 # Execute Predicto AutoTrader!
 # You can schedule this script to run daily before market open (9.30am E.T.)
 # Note: Make sure you understand the risks if you are using real money!
@@ -35,4 +36,5 @@ predicto_api_wrapper.submit_latest_trade_picks(
     model_avg_roi = 0.0,
     symbols = None,
     investment_per_trade=1000,
-    trade_order_type=TradeOrderType.Bracket)
+    trade_order_type=TradeOrderType.Bracket,
+    stoploss_fixed_pct=None)
