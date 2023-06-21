@@ -251,7 +251,8 @@ class PredictoApiWrapper(object):
                                         model_avg_roi = 0.0,
                                         symbols = None,
                                         investment_per_trade = 1000,
-                                        trade_order_type = TradeOrderType.Bracket):
+                                        trade_order_type = TradeOrderType.Bracket,
+                                        stoploss_fixed_pct = None):
         """Call this daily just before market open (or during). It will use last day's Trade Picks.
         
         Args:
@@ -262,6 +263,7 @@ class PredictoApiWrapper(object):
             symbols                  : array with symbols to trade, if None all of them will be considered
             investment_per_trade     : how much money to use per trade (note we'll submit an order for as many stocks as possible up to this number. If it's not enough for a single stock we'll skip)
             trade_order_type         : one of TradeOrderType.Bracket or TradeOrderType.TrailingStop. Bracket will set fixed stop loss and take profit prices. TrailingStop will set a trailing stop price.
+            stoploss_fixed_pct       : if provided, stoploss will be set at this fixed percentage (e.g. value 0.02 (2%) will set stoploss to -2% on a BUY order, and +2% on a SELL order)
         """
         # retrieve all supported stocks
         stocks_json = self.get_supported_tickers()
@@ -303,7 +305,9 @@ class PredictoApiWrapper(object):
                 # Check if filters are matched
                 if abs(change_pct) >= abs_change_pct_threshold \
                         and tp_json['TradeAction'] in actions \
+                        and tp_json['AvgUncertainty'] is not None \
                         and tp_json['AvgUncertainty'] <= average_uncertainty \
+                        and tp_json['AverageROI'] is not None \
                         and tp_json['AverageROI'] >= model_avg_roi:
                         
                     print('\tMatched Expected change : {0:.2f}% !'.format(change_pct * 100))
@@ -317,6 +321,20 @@ class PredictoApiWrapper(object):
                         datetime.today().strftime('%H-%M-%S'),
                         symbol, 
                         TradeAction(tp_json['TradeAction']).name)
+                    
+                    # Here try to re-adjust TargetStopLossPrice if a custom percentage has been given.
+                    # We are going to use the max allowed percentage, either from ModelTradeRecommendation or from parameter.
+                    targetSellPrice = tp_json['TargetSellPrice']
+                    targetStopLossPrice = tp_json['TargetStopLossPrice']
+                    entry_price = tp_json['StartingPrice']
+                    trade_action = TradeAction(int(tp_json['TradeAction']))
+                    if stoploss_fixed_pct is not None and stoploss_fixed_pct != 0:
+                        cur_percentage = abs(entry_price - targetStopLossPrice) / entry_price
+                        if cur_percentage < stoploss_fixed_pct:
+                            if trade_action == TradeAction.Buy:
+                                targetStopLossPrice = min(entry_price - (entry_price * stoploss_fixed_pct), targetStopLossPrice)
+                            else:
+                                targetStopLossPrice = max(entry_price + (entry_price * stoploss_fixed_pct), targetStopLossPrice)
 
                     # If all looks good, we can now submit our bracket order (market order + stop loss + take profit)
                     print()
@@ -324,13 +342,13 @@ class PredictoApiWrapper(object):
                     print('------------------------') 
                     alpaca_order_result = self._alpaca_api_wrapper.submit_order(
                         trade_order_type,
-                        TradeAction(tp_json['TradeAction']), 
+                        trade_action, 
                         symbol, 
                         None, 
                         investment_per_trade, 
-                        tp_json['StartingPrice'], 
-                        tp_json['TargetSellPrice'], 
-                        tp_json['TargetStopLossPrice'], 
+                        entry_price, 
+                        targetSellPrice, 
+                        targetStopLossPrice, 
                         client_order_id)
                     print('------------------------')
                     print()
@@ -349,6 +367,7 @@ class PredictoApiWrapper(object):
                     
             except Exception as ex:
                 print('\t Skipping: Exception: {0}\n'.format(ex))
+                raise ex
 
         print('Submitted {0} hedged orders: {1}'.format(len(symbols_submitted), str(symbols_submitted)))
 

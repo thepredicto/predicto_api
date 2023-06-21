@@ -295,7 +295,7 @@ class AlpacaApiWrapper(object):
         # if new loss risk is more than potential gain, cancel order
         newTargetSellPercent = (targetSellPrice - newStartingPrice) / newStartingPrice
         if abs(newTargetSellPercent) < abs(stopLossPercent):
-            print('Wont process: abs(newTargetSellPercent) < abs(stopLossPercent)')
+            print('Wont process, new loss risk is more than potential gain: abs(newTargetSellPercent) < abs(stopLossPercent)')
             return (False, newStartingPrice, targetSellPrice, newStopLossPrice, newQuantity)
 
         # do some extra checks here
