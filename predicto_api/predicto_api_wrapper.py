@@ -367,7 +367,6 @@ class PredictoApiWrapper(object):
                     
             except Exception as ex:
                 print('\t Skipping: Exception: {0}\n'.format(ex))
-                raise ex
 
         print('Submitted {0} hedged orders: {1}'.format(len(symbols_submitted), str(symbols_submitted)))
 
