@@ -75,7 +75,7 @@ class PredictoApiWrapper(object):
         Returns:
             json with retrieved forecast
         """
-        endpoint = "{0}/api/forecasting/{1}/{2}/20".format(PredictoApiWrapper._base_url, ticker, date)
+        endpoint = "{0}/api/forecasting/{1}/{2}/22".format(PredictoApiWrapper._base_url, ticker, date)
         response = requests.get(endpoint, headers=self._head)
         
         self._validate_api_response(response)
