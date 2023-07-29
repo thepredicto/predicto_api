@@ -95,7 +95,7 @@ class PredictoApiWrapper(object):
         Returns:
             json with retrieved trade pick
         """
-        endpoint = "{0}/api/forecasting/tradepicks/{1}/{2}/_,0.0,0,0,modelroi".format(PredictoApiWrapper._base_url, ticker, date)
+        endpoint = "{0}/api/forecasting/tradepicks/{1}/{2}/_,-100.0,0.0,0,0,modelroi".format(PredictoApiWrapper._base_url, ticker, date)
         response = requests.get(endpoint, headers=self._head)
         
         self._validate_api_response(response)
